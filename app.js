@@ -28,7 +28,7 @@ MongoClient.connect('mongodb://localhost:27017/wiki', function(err, db) {
   });
   
   app.get('/mems', function(req, res) {
-    db.collection('mems').find().toArray(function(err, mems) {
+    db.collection('mems').find().sort({name: 1}).toArray(function(err, mems) {
 	  res.json(mems);
 	});
   });
