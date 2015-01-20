@@ -1,70 +1,23 @@
+"use strict";
+
 var express = require('express'),
-    app = express(),
-	swig = require('swig');
-	MongoClient = require('mongodb').MongoClient,
-	ObjectID = require('mongodb').ObjectID,
-	path = require('path');
-	
-MongoClient.connect('mongodb://localhost:27017/wiki', function(err, db) {
-  "use strict"
-  if (err) throw err;
+	bodyParser = require('body-parser'),
+  	swig = require('swig'),
+  	path = require('path'),
+  	routes = require('./routes/index');
+
+var app = express();
   
-  app.set('port', process.env.PORT || 3000);
-  
-  app.engine('html', swig.renderFile);
-  app.set('view engine', 'html');
-  app.set('views', __dirname + '/views');
-  app.use(express.json());
-  app.use(express.static(path.join(__dirname, 'public')));
-  
-  app.get('/areas', function(req, res) {
-    var areasArray = [];
-    db.collection('mems').find({}, {'areas': true, '_id': false}).toArray(function(err, areas) {  
-	  for (var i = 0, l = areas.length; i < l; i++) {
-	    areasArray.push(areas[i].areas);
-	  }
-	  res.json({areas: areasArray});
-	});
-  });
-  
-  app.get('/mems', function(req, res) {
-    db.collection('mems').find().sort({name: 1}).toArray(function(err, mems) {
-	  res.json(mems);
-	});
-  });
-  
-  app.post('/mems', function(req, res) {
-    if (req.body._id) { 
-	  req.body._id = new ObjectID(req.body._id);
-      db.collection('mems').update({'_id': req.body._id}, req.body, {'upsert': true}, function(err, data) {
-	    if (err) throw err;
-		db.collection('mems').findOne({_id: req.body._id}, function(err, data) {
-		  if (err) throw err;
-		  res.json(data);
-		});
-	  });
-	} else {	
-	  db.collection('mems').insert(req.body, function(err, data) {
-	    if (err) throw err;
-	    res.json(data[0]);
-	  });
-	}
-  });
-  
-  app.get('/delete/:id', function(req, res) {   
-    var objID;
-    try { 
-	  objID = new ObjectID(req.params.id); 
-	} catch (e) {}
-    db.collection('mems').remove({_id: objID},function(err,data){ res.json(data);});
-  });
-    
-  app.get('/', function(req, res) {
-	res.render('home');
-  });
-  
-  app.listen(app.get('port'), function(){
-        console.log('Express server listening on port ' + app.get('port'));
-  });
-	
+app.set('port', process.env.PORT || 3000);
+app.set('view engine', 'html');
+app.set('views', __dirname + '/views');
+
+app.engine('html', swig.renderFile);
+
+app.use(bodyParser());
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/', routes);
+
+app.listen(app.get('port'), function(){
+      console.log('Express server listening on port ' + app.get('port'));
 });
